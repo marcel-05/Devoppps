@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  vuejs:
+    # On reprend le Dockerfile multi-stage que je t’ai donné
+    build:
+      context: .
+      dockerfile: Dockerfile        # ← assure-toi qu’il s’appelle bien ainsi
+      target: runtime               # étape Nginx (définie implicitement)
+    ports:
+      - "80:80"                     # Le front sera dispo sur http://localhost
+    environment:
+      - NODE_ENV=production         # Pas indispensable mais cohérent
+    # Si tu veux “live reload” en dev, commente la ligne build: et remplace
+    # par image: node:18-alpine + commande "npm run dev -- --host"
+    # (sinon garde ce compose pure prod)
+
+    # Exemple de volume pour override de conf Nginx (facultatif)
+    # volumes:
+    #   - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
