@@ -1,37 +1,26 @@
-########################################
-# Étape 1 : build de l’application Vue #
-########################################
-# Image officielle Node (légère, Alpine)
-FROM node:18-apline AS builder
+# Étape 1 – Build Vue.js
+FROM node:18-alpine AS builder
 
-# Crée le dossier de travail
 WORKDIR /app
 
-# Copie package.json / package-lock.json (ou pnpm-lock.yaml / yarn.lock)
 COPY package*.json ./
+RUN npm install
 
-# Installation des dépendances
-RUN npm ci           # plus rapide / fiable que npm install
-
-# Copie du reste du projet
 COPY . .
+RUN npm run build
 
-# Construction de la version de production
-RUN npm run build           # génère le dossier dist/ (vite) ou build/ (vue-cli)
+# Étape 2 – Serveur NGINX
+FROM nginx:stable-alpine AS runtime
 
-########################################
-# Étape 2 : image runtime super légère #
-########################################
-FROM nginx:stable-alpine
-
-# Copie des fichiers compilés dans le dossier servi par Nginx
+# Copier le build de Vue vers nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
-#    ^^^ adapte à /app/build si tu utilises vue-cli
 
-# Optionnel : remplace la conf Nginx si besoin
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Supprimer la config par défaut si nécessaire
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Expose le port web standard
+# Copier ta propre config nginx (optionnel)
+# COPY nginx.conf /etc/nginx/conf.d
+
 EXPOSE 80
 
-# Lance Nginx (commandé par l’image de base → inutile de redéfinir CMD)
+CMD ["nginx", "-g", "daemon off;"]
